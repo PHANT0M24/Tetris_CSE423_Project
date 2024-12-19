@@ -87,4 +87,4 @@ points = [(np.sin(t), np.cos(t), t) for t in np.linspace(0, 10, 1000)]
 **GitHub**: [Ishrat2413](https://github.com/Ishrat2413)
 ---
 **Co-Author**: SM Najmul Alam   
-**GitHub**: 
+**GitHub**: [Najmul193](https://github.com/Najmul193)

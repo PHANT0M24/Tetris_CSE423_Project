@@ -57,27 +57,6 @@ Point data is dynamically generated or loaded from an external source (e.g., `.t
 ### 4. **Rendering Loop**
 A render loop updates the point positions (if animated) and redraws the frame at a fixed interval.
 
-## Example
-
-### Static Point Cloud
-Render a simple grid of points:
-```python
-points = [
-    (x, y, z) for x in range(-10, 10) for y in range(-10, 10) for z in range(-10, 10)
-]
-# Pass this data to the GPU for rendering.
-```
-
-### Animated Points
-Render points with oscillating positions:
-```python
-import numpy as np
-points = [(np.sin(t), np.cos(t), t) for t in np.linspace(0, 10, 1000)]
-```
-
-
-
-
 ---
 
 **Author**: Mohammad Khairul Ananm   

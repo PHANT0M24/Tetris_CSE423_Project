@@ -40,7 +40,7 @@ class Figure:
     def rotate(self):
         self.rotation = (self.rotation + 1) % len(self.figures[self.type])
 
-# Midpoint Circle Drawing Algorithm to generate rounded corner points
+# Midpoint Circle Drawing Algorithm
 def midpoint_circle(center_x, center_y, radius):
     points = []
     x = radius
@@ -80,11 +80,11 @@ class Tetris:
         self.paused = False  # Add paused attribute
 
     def new_figure(self):
-        # Check if there are upcoming figures; if not, generate them
+        # Checking if there are upcoming figures; if not, generate them
         if not self.upcoming_figures:
             self.upcoming_figures = [Figure(3, 0) for _ in range(3)]
 
-        # Pop the next figure from the upcoming figures list
+        # Poping the next figure from the upcoming figures list
         self.figure = self.upcoming_figures.pop(0)
 
         # After using a figure, add a new one to the list
@@ -150,8 +150,7 @@ class Tetris:
 # Draw a single block cell with a rounded corner style
 def draw_cell(x, y, color):
     glColor3f(*color)
-    radius = 10  # Increased radius for a larger circle
-    # Create a filled rounded square by drawing four quarter-circles at the corners
+    radius = 10
     for dx in range(4):
         for dy in range(4):
             if dx != 2 or dy != 2:
@@ -177,10 +176,8 @@ def draw_button(x, y, width, height, label, color):
 # Function to display the game state
 def display():
     glClear(GL_COLOR_BUFFER_BIT)
-
-    # Draw the golden border for the game area (5px width)
     glColor4f(0.62, 0.0, 1, 1.0)  # Golden color with full opacity
-    glLineWidth(5)  # Set border line width
+    glLineWidth(5)  # Setting border line width
     glBegin(GL_LINE_LOOP)
     glVertex2i(2, 30)  # Top-left corner
     glVertex2i(game.width * 30, 30)  # Top-right corner
@@ -188,7 +185,6 @@ def display():
     glVertex2i(2, game.height * 30)  # Bottom-left corner
     glEnd()
 
-    # Draw the grid lines inside the game area (2px width, 50% opacity)
     glColor4f(0.5, 0.5, 0.5, 0.5)  # Light gray with 50% opacity
     glLineWidth(2)  # Set grid line width
     glBegin(GL_LINES)
@@ -212,7 +208,7 @@ def display():
                 if i * 4 + j in game.figure.image():
                     draw_cell(game.figure.x + j, game.figure.y + i, colors[game.figure.color])
 
-    # Score display with blinking effect (using glPoints)
+    # Score display with blinking effect
     glColor3f(1.0, 1.0, 1.0)  # White color for the score
     current_time = time.time()
     score_text = "Score"
@@ -282,7 +278,6 @@ def mouse_click(button, state, x, y):
 
 
 # Timer function to control game speed
-# Timer function to control game speed
 def update(value):
     if game.state == "start" and not game.paused:  # Skip updates if the game is paused
         game.go_down()
@@ -305,5 +300,5 @@ def main():
     glutMainLoop()  # Start the main loop
 
 # Run the game
-game = Tetris(20, 25)  # Game field 20x30
+game = Tetris(20, 25)
 main()

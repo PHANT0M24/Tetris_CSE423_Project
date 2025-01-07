@@ -77,15 +77,18 @@ class Tetris:
         self.score = 0
         self.last_score_time = time.time()
         self.upcoming_figures = []
+        self.paused = False  # Add paused attribute
 
     def new_figure(self):
-        self.figure = Figure(3, 0)
-        # Get the next upcoming figure
-        if len(self.upcoming_figures) == 0:
+        # Check if there are upcoming figures; if not, generate them
+        if not self.upcoming_figures:
             self.upcoming_figures = [Figure(3, 0) for _ in range(3)]
-        else:
-            self.upcoming_figures.append(Figure(3, 0))
-            self.upcoming_figures.pop(0)
+
+        # Pop the next figure from the upcoming figures list
+        self.figure = self.upcoming_figures.pop(0)
+
+        # After using a figure, add a new one to the list
+        self.upcoming_figures.append(Figure(3, 0))
 
     def intersects(self):
         for i in range(4):
@@ -116,21 +119,33 @@ class Tetris:
         self.score += lines ** 2
 
     def go_down(self):
-        self.figure.y += 1
-        if self.intersects():
-            self.figure.y -= 1
-            self.freeze()
+        if not self.paused and self.state == "start":  # Check if not paused
+            self.figure.y += 1
+            if self.intersects():
+                self.figure.y -= 1
+                self.freeze()
 
     def go_side(self, dx):
-        self.figure.x += dx
-        if self.intersects():
-            self.figure.x -= dx
+        if not self.paused and self.state == "start":  # Check if not paused
+            self.figure.x += dx
+            if self.intersects():
+                self.figure.x -= dx
 
     def rotate(self):
-        old_rotation = self.figure.rotation
-        self.figure.rotate()
-        if self.intersects():
-            self.figure.rotation = old_rotation
+        if not self.paused and self.state == "start":  # Check if not paused
+            old_rotation = self.figure.rotation
+            self.figure.rotate()
+            if self.intersects():
+                self.figure.rotation = old_rotation
+
+    def toggle_pause(self):
+        if self.state == "start":  # Only allow pausing in the "start" state
+            self.paused = not self.paused
+
+    def reset_game(self):
+        self.__init__(self.height, self.width)  # Reinitialize the game
+        self.new_figure()
+
 
 # Draw a single block cell with a rounded corner style
 def draw_cell(x, y, color):
@@ -145,6 +160,19 @@ def draw_cell(x, y, color):
                 for px, py in points:
                     glVertex2i(px, py)
                 glEnd()
+def draw_button(x, y, width, height, label, color):
+    glColor3f(*color)
+    glBegin(GL_QUADS)
+    glVertex2i(x, y)
+    glVertex2i(x + width, y)
+    glVertex2i(x + width, y + height)
+    glVertex2i(x, y + height)
+    glEnd()
+
+    glColor3f(1, 1, 1)
+    glRasterPos2i(x + 10, y + height // 2 - 5)
+    for char in label:
+        glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
 
 # Function to display the game state
 def display():
@@ -198,21 +226,26 @@ def display():
     for char in score_display:
         glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
 
-    glutSwapBuffers()
+    # Buttons
+    draw_button(800, 100, 100, 30, "Pause", (0, 0.7, 0))
+    draw_button(800, 150, 100, 30, "Restart", (0.7, 0.7, 0))
+    draw_button(800, 200, 100, 30, "Quit", (0.7, 0, 0))
 
-def draw_button(x, y, label, action):
-    radius = 10
-    glColor3f(0.0, 0.7, 0.0)  # Green color for the button
-    points = midpoint_circle(x, y, radius)
-    glBegin(GL_POLYGON)
-    for px, py in points:
-        glVertex2i(px, py)
-    glEnd()
-
-    glColor3f(1.0, 1.0, 1.0)  # White text on button
-    glRasterPos2i(x - 10, y)
-    for char in label:
+    # Display upcoming cells on the right side below buttons
+    glColor3f(1.0, 1.0, 1.0)  # White color for text
+    glRasterPos2i(800, 250)  # Position the text "Upcoming Cell"
+    for char in "Upcoming Cell":
         glutBitmapCharacter(GLUT_BITMAP_9_BY_15, ord(char))
+
+    # Draw the upcoming cells below the text "Upcoming Cell"
+    for i, upcoming_figure in enumerate(game.upcoming_figures):
+        for j in range(4):
+            for k in range(4):
+                if j * 4 + k in upcoming_figure.image():
+                    # Draw the upcoming cells offset from the right side of the main grid
+                    draw_cell(27 + k, 9 + i * 4 + j, colors[upcoming_figure.color])
+
+    glutSwapBuffers()
 
 def reset_game():
     game.score = 0
@@ -223,7 +256,6 @@ def reset_game():
 def quit_game():
     exit(0)
 
-# Keyboard input handler
 def keyboard(key, x, y):
     if game.state == "start":
         if key == b'a':  # Move left
@@ -232,17 +264,31 @@ def keyboard(key, x, y):
             game.go_side(1)
         elif key == b's':  # Move down
             game.go_down()
-        elif key == b'w':  # Rotate
+        elif key == b'w' or key == 101:  # Rotate (also support up arrow key)
             game.rotate()
     if key == b'q':  # Quit the game
         exit(0)
 
+
+def mouse_click(button, state, x, y):
+    if button == GLUT_LEFT_BUTTON and state == GLUT_DOWN:
+        if 800 <= x <= 900:
+            if 100 <= y <= 130:  # Pause button
+                game.toggle_pause()
+            elif 150 <= y <= 180:  # Restart button
+                game.reset_game()
+            elif 200 <= y <= 230:  # Quit button
+                glutLeaveMainLoop()
+
+
+# Timer function to control game speed
 # Timer function to control game speed
 def update(value):
-    if game.state == "start":
+    if game.state == "start" and not game.paused:  # Skip updates if the game is paused
         game.go_down()
     glutPostRedisplay()  # Redraw the screen
     glutTimerFunc(500, update, 0)  # Call update every 500 ms
+
 
 # Main function to initialize the game
 def main():
@@ -253,6 +299,7 @@ def main():
     glOrtho(0, 1280, 720, 0, -1, 1)  # 2D orthogonal projection for the new window size
     glutDisplayFunc(display)  # Set display callback
     glutKeyboardFunc(keyboard)  # Set keyboard input callback
+    glutMouseFunc(mouse_click)
     glutTimerFunc(200, update, 0)  # Set the timer callback
     game.new_figure()  # Generate the first figure
     glutMainLoop()  # Start the main loop
